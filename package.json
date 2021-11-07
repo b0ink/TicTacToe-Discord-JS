@@ -1,5 +1,5 @@
 {
-  "name": "connect4",
+  "name": "connect-4-discord-js",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "discord.js": "^12.4.1",
-    "discord-buttons": "^4.0.0",
+    "discord-buttons": "^4.0.0"
   },
   "devDependencies": [],
   "description": "yes",
