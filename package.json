@@ -12,6 +12,6 @@
     "discord.js": "^13.3.1"
   },
   "devDependencies": [],
-  "description": "yes",
+  "description": "Discord JS based Tic Tac Toe to be played against other players or bots!",
   "nodeVersion": "14.18.1"
 }
