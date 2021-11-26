@@ -1,37 +1,41 @@
-const discord = require('discord.js');
+const {Client, Intents, MessageButton, MessageActionRow} = require('discord.js');
 
-const client = new discord.Client({
-    intents: discord.Intents.ALL
+const client = new Client({
+    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES]
 });
 
 const {    BotToken    } = require('./config.json');
-
-const disbut = require('discord-buttons');
 
 var games = []; //the holy array
 
 function createBoard(game, userid, opponent, disabled=false){
     let buttons = [];
     for (let i = 1; i <= 9; i++) {
-        let btn = new disbut.MessageButton();
+        let btn = new MessageButton();
         btn.setLabel(game.split('')[i-1])
-        .setID(`TTT_${userid}_${opponent}_${i}`);
+        .setCustomId(`TTT_${userid}_${opponent}_${i}`);
         let symbol = game.split('')[i-1]
         if(symbol == '?'){
-            btn.setStyle('grey');
+            btn.setStyle('SECONDARY');
         }else{
-            if(symbol == 'X') btn.setStyle('red')
-            if(symbol == 'O') btn.setStyle('blurple')
+            if(symbol == 'X') btn.setStyle('DANGER')
+            if(symbol == 'O') btn.setStyle('PRIMARY')
         }
-        if(disabled) btn.setDisabled();
+        if(disabled) btn.setDisabled(true);
         buttons.push(btn)
     }
-    let buttonRow1 = new disbut.MessageActionRow()
-        .addComponent(buttons[0]).addComponent(buttons[1]).addComponent(buttons[2]);
-    let buttonRow2 = new disbut.MessageActionRow()
-        .addComponent(buttons[3]).addComponent(buttons[4]).addComponent(buttons[5]);
-    let buttonRow3 = new disbut.MessageActionRow()
-        .addComponent(buttons[6]).addComponent(buttons[7]).addComponent(buttons[8]);
+    let buttonRow1 = new MessageActionRow()
+        .addComponents(
+            buttons[0], buttons[1], buttons[2]
+        );
+    let buttonRow2 = new MessageActionRow()
+        .addComponents(
+            buttons[3], buttons[4], buttons[5]
+        );
+    let buttonRow3 = new MessageActionRow()
+        .addComponents(
+            buttons[6], buttons[7], buttons[8]
+        );
 
     return [buttonRow1, buttonRow2, buttonRow3]
 }
@@ -114,11 +118,9 @@ function botAlgorithim(s){
     }
 }
 
-client.once('ready', () =>{
-    console.log("Connect 4 bot connected");
-})  
 
-client.on('message', async message => {
+
+client.on('messageCreate', async message => {
     if(message.content.toLowerCase().startsWith("!ttt")){
 
         let opponent;
@@ -141,7 +143,11 @@ client.on('message', async message => {
         // if(!opponent.user.bot) turn = players[Math.floor(Math.random()*2)]; //!change later once i fix the bots first turn
         turn = players[Math.floor(Math.random()*2)];
         let msgid;
-       message.channel.send(`<@${message.author.id}> has started a game of TicTacToe with <@${opponent.user.id}>. \n<@${turn}>'s Turn!`,  { components: board}).then(sent => {
+    //    message.channel.send(`<@${message.author.id}> has started a game of TicTacToe with <@${opponent.user.id}>. \n<@${turn}>'s Turn!`,  { components: board}).then(sent => {
+        message.channel.send({
+           content: `<@${message.author.id}> has started a game of TicTacToe with <@${opponent.user.id}>. \n<@${turn}>'s Turn!`,
+           components: [...board]
+        }).then(sent => {
     //    message.channel.send(`${message.author.tag} has started a game of TicTacToe with ${opponent.userta}. \n<@${turn}>'s Turn!`,  { components: board}).then(sent => {
             msgid = sent.id
             console.log(msgid, 'was sent by the bot')
@@ -190,28 +196,34 @@ client.on('message', async message => {
 });
 
 
-client.on('clickButton', async (btn) => {
-    let btnData = btn.id.split('_')
+client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isButton()) return;
+    // let btnData = btn.id.split('_')
+    console.log(interaction.customId);
+    let btnData = interaction.customId.split('_')
+    console.log(btnData);
     if(btnData[0]!='TTT'){
         try{
-            return await btn.reply.defer(); //check if button is from ttt game
+            return await interaction.deferUpdate(); //check if button is from ttt game
         }catch(e){
             console.log('unknown interaction, couldnt find the game')
         }
     } 
     if(!games[btnData[1]]){
+        console.log('game isnt there');
         try{
-            return await btn.reply.defer(); //game doesnt exist
+            console.log('deferring reply?');
+            return await interaction.deferUpdate(); //game doesnt exist
         }catch(e){
             console.log('unknown interaction, couldnt find the game')
         }
     } 
     let member;
-    if(btn.clicker.member){
-        member = btn.clicker.member
-    }else {
-        member = btn.clicker.fetch().member;
+    if(interaction.member){
+        member = interaction.member
+        console.log("found the user", member.user.username);
     }
+    if(!member) return console.log('couldnt find member');
     let symbol = '';
     let game = games[btnData[1]];
     let p1;
@@ -219,7 +231,7 @@ client.on('clickButton', async (btn) => {
     let nextTurn;
     // if(!game[0]){
     //     try{
-    //         return await btn.reply.defer(); //game doesnt exist
+    //         return await btn.deferUpdate(); //game doesnt exist
     //     }catch(e){
     //         console.log('unknown interaction, game exists but cant find first index??')
     //     }
@@ -237,10 +249,10 @@ client.on('clickButton', async (btn) => {
         nextTurn = p2;
     }
 
-    if(game[2] != member.user.id) return await btn.reply.defer();
-    if(game[5] == true) return await btn.reply.defer();
+    if(game[2] != member.user.id) return await interaction.deferUpdate();
+    if(game[5] == true) return await interaction.deferUpdate();
     let score = game[3].split('');
-    if(score[btnData[3]-1] == 'X' || score[btnData[3]-1] == 'O') return await btn.reply.defer();
+    if(score[btnData[3]-1] == 'X' || score[btnData[3]-1] == 'O') return await interaction.deferUpdate();
     score[btnData[3]-1] = symbol;
     let newScore = score.join('');
     game[3] = newScore;
@@ -273,7 +285,10 @@ client.on('clickButton', async (btn) => {
     if(symbol == 'X') newBoard = createBoard(newScore, member.user.id, btnData[2], disabled); //means clicker is player1
     if(symbol == 'O') newBoard = createBoard(newScore, btnData[1], member.user.id, disabled); //means clicker is player1
 
-    btn.message.edit(reply, {components: newBoard})
+    interaction.message.edit({
+        content: reply,
+        components: [...newBoard]
+    })
     if(game[6] == true && !winner){ // if theres a bot and still no winner
        //  console.log('bot is making its move');                      
         // let randomGuess = -1;
@@ -321,25 +336,36 @@ client.on('clickButton', async (btn) => {
             if(game[5]) disabled = true;
             let newNewBoard = createBoard(newNewScore, btnData[1], member.user.id, disabled)
             // let botReply = await btn.reply.think();
-            btn.message.edit(`<@${game[1]}> is making their turn...`, {components: newBoard});
+            interaction.message.edit({
+                content:`<@${game[1]}> is making their turn...`,
+                components: [...newBoard]
+            });
             let timeToThink = ((Math.random()*2))*1000;
            //  console.log(timeToThink)
             setTimeout( () => {
-                btn.message.edit(reply, {components: newNewBoard});
-
+                interaction.message.edit({
+                    content: reply,
+                    components: [...newNewBoard]
+                });
              }, timeToThink);
         }else{
             // btn.reply.send('bot fucked up and has forfeit');
-            btn.message.edit(`You confused <@${game[1]}> and they have given up.`, {components: newBoard});
+            interaction.message.edit({
+                content: `You confused <@${game[1]}> and they have given up.`,
+                components: [...newBoard]
+            });
         }
     }
     try{
-        await btn.reply.defer();
+        await interaction.deferUpdate();
         
     }catch(e){
         console.log('interaction error with connect 4')
     }
 });
 
+client.once('ready', () =>{
+    console.log("Connect 4 bot connected");
+})  
 
 client.login(BotToken);

@@ -9,8 +9,7 @@
   "author": "diddims",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^12.4.1",
-    "discord-buttons": "^4.0.0"
+    "discord.js": "^13.3.1"
   },
   "devDependencies": [],
   "description": "yes",
