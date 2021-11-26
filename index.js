@@ -103,12 +103,9 @@ function botAlgorithim(s){
     if(s[6] == s[4] && s[2] == empty) openIndexes.push([s[6], 2]);
     for(let i of openIndexes){
         //so only issue is that the above code will push data to openIndexes if ? = ? and then the third square = ? but i check for X and O here anyway so it doesnt matter
-        // console.log(i);
         if(i[0] == 'X') blockingIndex = i[1];
         if(i[0] == 'O') winningIndex = i[1];
     }
-    // return [blockingIndex, winningIndex]
-    // console.log('winning index:', winningIndex, 'blockingindex:',blockingIndex)
     if(winningIndex !== -1){
         return winningIndex;
     }else if (blockingIndex !== -1){
@@ -140,15 +137,12 @@ client.on('messageCreate', async message => {
         let player1 = userid;
         let player2 = opponent.user.id
         let channelID = message.channel.id;
-        // if(!opponent.user.bot) turn = players[Math.floor(Math.random()*2)]; //!change later once i fix the bots first turn
         turn = players[Math.floor(Math.random()*2)];
         let msgid;
-    //    message.channel.send(`<@${message.author.id}> has started a game of TicTacToe with <@${opponent.user.id}>. \n<@${turn}>'s Turn!`,  { components: board}).then(sent => {
         message.channel.send({
            content: `<@${message.author.id}> has started a game of TicTacToe with <@${opponent.user.id}>. \n<@${turn}>'s Turn!`,
            components: [...board]
         }).then(sent => {
-    //    message.channel.send(`${message.author.tag} has started a game of TicTacToe with ${opponent.userta}. \n<@${turn}>'s Turn!`,  { components: board}).then(sent => {
             msgid = sent.id
             console.log(msgid, 'was sent by the bot')
             let winner = false;
@@ -183,7 +177,6 @@ client.on('messageCreate', async message => {
         
                 client.channels.cache.get(channelID).messages.fetch(msgid)
                 .then(mesg =>{
-                    // let disabledBoard = createBoard(currentScore, message.author.id, games[message.author.id][1]);
                     mesg.edit(`<@${message.author.id}> has forfeit the game. <@${games[message.author.id][1]}> has won!`, {components: disabledBoard})
                     games[message.author.id] = null;
                     message.reply('You have left your ttt game.')
@@ -198,7 +191,6 @@ client.on('messageCreate', async message => {
 
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isButton()) return;
-    // let btnData = btn.id.split('_')
     console.log(interaction.customId);
     let btnData = interaction.customId.split('_')
     console.log(btnData);
@@ -229,23 +221,15 @@ client.on('interactionCreate', async (interaction) => {
     let p1;
     let p2;
     let nextTurn;
-    // if(!game[0]){
-    //     try{
-    //         return await btn.deferUpdate(); //game doesnt exist
-    //     }catch(e){
-    //         console.log('unknown interaction, game exists but cant find first index??')
-    //     }
-    // }
+
     if(game[0] == member.user.id){
         symbol = 'X';
-        // p1 = member.user.id;
         p2 = game[1];
         nextTurn = p2;
     } 
     if(game[1] == member.user.id){
         symbol = 'O';
         p2 = game[0];
-        // p1 = member.user.id;
         nextTurn = p2;
     }
 
@@ -264,14 +248,11 @@ client.on('interactionCreate', async (interaction) => {
     game[2] = nextTurn;
     let reply =  `<@${game[0]}> has started a game of TicTacToe with <@${game[1]}>. \n<@${nextTurn}>'s Turn!`
     if(winner) {
-        // reply = `<@${member.user.id}> is the winner!`;
         reply = `<@${game[0]}> has started a game of TicTacToe with <@${game[1]}>. \n<@${member.user.id}> has won!`;
-        
         game[5] = true;
         games[btnData[1]] = null;
 
     }else{
-       //  console.log(newScore);
         if(newScore.indexOf('?') == -1){
             reply = `<@${game[0]}> has started a game of TicTacToe with <@${game[1]}>. \nThere was a tie!`;
             game[5] = true;
@@ -290,10 +271,7 @@ client.on('interactionCreate', async (interaction) => {
         components: [...newBoard]
     })
     if(game[6] == true && !winner){ // if theres a bot and still no winner
-       //  console.log('bot is making its move');                      
-        // let randomGuess = -1;
         let randomGuess = botAlgorithim(newScore);
-       //  console.log('bot algorithim gave me an index of', randomGuess);
 
         if(randomGuess == -1){
             let botOptions = [];
@@ -304,21 +282,16 @@ client.on('interactionCreate', async (interaction) => {
                     botOptions.push(index);
                 }
             }
-           //  console.log('generating random index from selection:',botOptions)
             randomGuess = botOptions[Math.floor(Math.random()* botOptions.length)];
-           //  console.log('new random guess is', randomGuess)
         }
         if(randomGuess > -1){
-           //  console.log(randomGuess, 'is the guess');
             score[randomGuess] = 'O';
             let newNewScore = score.join('');
             game[3] = newNewScore;
             let nextTurn = game[0];
             game[2] = nextTurn;
-            // let reply = `<@${nextTurn}>'s turn`;
             let botWinner = checkWinner(newNewScore.split(''));
             let reply =  `<@${game[0]}> has started a game of TicTacToe with <@${game[1]}>. \n<@${nextTurn}>'s Turn!`
-           //  console.log(newNewScore);
             if(botWinner){
                 reply = `<@${game[0]}> has started a game of TicTacToe with <@${game[1]}>. \n<@${game[1]}> has won!`;
                 game[5] = true;
@@ -335,13 +308,11 @@ client.on('interactionCreate', async (interaction) => {
             let disabled = false;
             if(game[5]) disabled = true;
             let newNewBoard = createBoard(newNewScore, btnData[1], member.user.id, disabled)
-            // let botReply = await btn.reply.think();
             interaction.message.edit({
                 content:`<@${game[1]}> is making their turn...`,
                 components: [...newBoard]
             });
             let timeToThink = ((Math.random()*2))*1000;
-           //  console.log(timeToThink)
             setTimeout( () => {
                 interaction.message.edit({
                     content: reply,
@@ -349,7 +320,6 @@ client.on('interactionCreate', async (interaction) => {
                 });
              }, timeToThink);
         }else{
-            // btn.reply.send('bot fucked up and has forfeit');
             interaction.message.edit({
                 content: `You confused <@${game[1]}> and they have given up.`,
                 components: [...newBoard]
