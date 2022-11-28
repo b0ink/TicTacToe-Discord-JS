@@ -119,7 +119,6 @@ function botAlgorithim(s){
 
 client.on('messageCreate', async message => {
     if(message.content.toLowerCase().startsWith("!ttt")){
-
         let opponent;
         let userid = message.author.id;
         if(message.mentions.members.first()){
@@ -160,7 +159,11 @@ client.on('messageCreate', async message => {
                 games[userid][2] = userid;
                 games[userid][3] = firstscore.join('');
                 setTimeout(() => {
-                    sent.edit(`<@${message.author.id}> has started a game of TicTacToe with <@${opponent.user.id}>. \n<@${message.author.id}>'s Turn!`,  { components: newBoard})
+                    sent.edit(
+                        {
+                            content: `<@${message.author.id}> has started a game of TicTacToe with <@${opponent.user.id}>. \n<@${message.author.id}>'s Turn!`,
+                            components: [...newBoard]
+                        });
                 }, 1000);
             }
             
@@ -308,7 +311,7 @@ client.on('interactionCreate', async (interaction) => {
             let disabled = false;
             if(game[5]) disabled = true;
             let newNewBoard = createBoard(newNewScore, btnData[1], member.user.id, disabled)
-            interaction.message.edit({
+            await interaction.message.edit({
                 content:`<@${game[1]}> is making their turn...`,
                 components: [...newBoard]
             });
