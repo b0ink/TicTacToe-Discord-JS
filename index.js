@@ -4,9 +4,21 @@ const client = new Client({
     intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES]
 });
 
+const { REST } = require('@discordjs/rest');
+const { Routes } = require('discord-api-types/v9');
+const { SlashCommandBuilder } = require('@discordjs/builders');
+
 const {    BotToken    } = require('./config.json');
 
 var games = []; //the holy array
+
+
+const commands = [
+    new SlashCommandBuilder().setName('ttt').setDescription('Start a TicTacToe game with another player, or tag a bot to play against AI instead!')
+    .addUserOption(option => option.setName('user').setRequired(true).setDescription('Select your opponent')),
+
+    new SlashCommandBuilder().setName('endttt').setDescription('Leave your current TTT match')
+].map(command => command.toJSON());
 
 function createBoard(game, userid, opponent, disabled=false){
     let buttons = [];
@@ -117,82 +129,97 @@ function botAlgorithim(s){
 
 
 
-client.on('messageCreate', async message => {
-    if(message.content.toLowerCase().startsWith("!ttt")){
-        let opponent;
-        let userid = message.author.id;
-        if(message.mentions.members.first()){
-            opponent = message.mentions.members.first();
-        }
-        if(!opponent) return message.reply('You must ping a user to play with');
-        if(opponent.user.id == userid && !opponent.user.bot) return message.reply('You cannot play against yourself')
-    
-        if(games[userid]) return message.reply('You are already in a game. To exit, use !leavettt')
-        if(games[opponent.user.id]) return message.reply('This user is already in a game. To exit, use !leavettt');
-        let board = createBoard('?????????', userid, opponent.user.id)
-    
-        let turn = userid;
-        let players = [userid, opponent.user.id];
-        let player1 = userid;
-        let player2 = opponent.user.id
-        let channelID = message.channel.id;
-        turn = players[Math.floor(Math.random()*2)];
-        let msgid;
-        message.channel.send({
-           content: `<@${message.author.id}> has started a game of TicTacToe with <@${opponent.user.id}>. \n<@${turn}>'s Turn!`,
-           components: [...board]
-        }).then(sent => {
-            msgid = sent.id
-            console.log(msgid, 'was sent by the bot')
-            let winner = false;
-            let bot = false;
-            if(opponent.user.bot){
-                bot = true;
-            }
-            games[userid] = [player1, player2, turn, '?????????', msgid, winner, bot, channelID];
-            if(turn == opponent.user.id && bot){
-                let firstscore = '?????????'.split('');
-                let randomguess = Math.floor(Math.random()*8);
-                firstscore[randomguess] = 'O';
-                console.log(firstscore.join(''))
-                let newBoard = createBoard(firstscore.join(''), userid, opponent.user.id)
-                games[userid][2] = userid;
-                games[userid][3] = firstscore.join('');
-                setTimeout(() => {
-                    sent.edit(
-                        {
-                            content: `<@${message.author.id}> has started a game of TicTacToe with <@${opponent.user.id}>. \n<@${message.author.id}>'s Turn!`,
-                            components: [...newBoard]
-                        });
-                }, 1000);
-            }
-            
-        })
-    }
+// client.on('messageCreate', async message => {
+//     if(message.content.toLowerCase().startsWith("!ttt")){
+      
+//     }
 
-    if( message.content.toLowerCase().startsWith("!leavettt") ||
-        message.content.toLowerCase().startsWith("!endttt")){
-            if(games[message.author.id]){
-                let msgid = games[message.author.id][4];
-                let channelID = games[message.author.id][7];
-                let currentScore = games[message.author.id][3];
+//     if( message.content.toLowerCase().startsWith("!leavettt") ||
+//         message.content.toLowerCase().startsWith("!endttt")){
+   
+//     }
+// });
+
+
+
+client.on('interactionCreate', async (interaction) => {
+    if(interaction.isCommand()){
+        const { commandName, options } = interaction;
+        if(commandName == "ttt"){
+            let opponent = interaction.options.getUser('user');
+            let userid = interaction.user.id;
+
+            console.log(opponent);
+ 
+            console.log(userid);
+            if(!opponent) return message.reply('You must ping a user to play with');
+            if(opponent.id == userid && !opponent.bot) return message.reply('You cannot play against yourself')
+        
+            if(games[userid]) return message.reply('You are already in a game. To exit, use !leavettt')
+            if(games[opponent.id]) return message.reply('This user is already in a game. To exit, use !leavettt');
+            let board = createBoard('?????????', userid, opponent.id)
+        
+            let turn = userid;
+            let players = [userid, opponent.id];
+            let player1 = userid;
+            let player2 = opponent.id
+            let channelID = interaction.channel.id;
+            turn = players[Math.floor(Math.random()*2)];
+            let msgid;
+            interaction.channel.send({
+               content: `<@${interaction.user.id}> has started a game of TicTacToe with <@${opponent.id}>. \n<@${turn}>'s Turn!`,
+               components: [...board]
+            }).then(sent => {
+                interaction.deferReply();
+                msgid = sent.id
+                console.log(msgid, 'was sent by the bot')
+                let winner = false;
+                let bot = false;
+                if(opponent.bot){
+                    bot = true;
+                }
+                games[userid] = [player1, player2, turn, '?????????', msgid, winner, bot, channelID];
+                if(turn == opponent.id && bot){
+                    let firstscore = '?????????'.split('');
+                    let randomguess = Math.floor(Math.random()*8);
+                    firstscore[randomguess] = 'O';
+                    console.log(firstscore.join(''))
+                    let newBoard = createBoard(firstscore.join(''), userid, opponent.id)
+                    games[userid][2] = userid;
+                    games[userid][3] = firstscore.join('');
+                    setTimeout(() => {
+                        sent.edit(
+                            {
+                                content: `<@${interaction.user.id}> has started a game of TicTacToe with <@${opponent.id}>. \n<@${interaction.user.id}>'s Turn!`,
+                                components: [...newBoard]
+                            });
+                    }, 1000);
+                }
+                
+            })
+        }else if (commandName == "endttt"){
+            if(games[interaction.user.id]){
+                let msgid = games[interaction.user.id][4];
+                let channelID = games[interaction.user.id][7];
+                let currentScore = games[interaction.user.id][3];
                 let disabledBoard = createBoard(currentScore, 0, 0, true);
         
                 client.channels.cache.get(channelID).messages.fetch(msgid)
                 .then(mesg =>{
-                    mesg.edit(`<@${message.author.id}> has forfeit the game. <@${games[message.author.id][1]}> has won!`, {components: disabledBoard})
-                    games[message.author.id] = null;
-                    message.reply('You have left your ttt game.')
+                    mesg.edit(`<@${message.author.id}> has forfeit the game. <@${games[interaction.user.id][1]}> has won!`, {components: disabledBoard})
+                    games[interaction.user.id] = null;
+                    interaction.reply('You have left your ttt game.')
                 }) 
                 .catch(console.error);
             }else{
-                message.reply('You are currently not in any ttt games.');
+                interaction.reply('You are currently not in any ttt games.');
             }
+        }
+
+        return;
     }
-});
-
-
-client.on('interactionCreate', async (interaction) => {
+    
+    
     if (!interaction.isButton()) return;
     console.log(interaction.customId);
     let btnData = interaction.customId.split('_')
@@ -338,7 +365,21 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.once('ready', () =>{
-    console.log("Connect 4 bot connected");
+    console.log("Tic Tac Toe bot connected");
+
+    const rest = new REST({ version: '9' }).setToken(BotToken);
+    
+    const guilds = client.guilds.cache.map(guild => {
+        return guild.id;
+    });
+    for(let guild of guilds){
+        rest.put(Routes.applicationGuildCommands(client.user.id, guild), { body: commands })
+        .then(() => console.log('Successfully registered application commands.'))
+        .catch(console.error);
+    }
+
+
 })  
+
 
 client.login(BotToken);
