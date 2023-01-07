@@ -9,9 +9,9 @@
   "author": "diddims",
   "license": "ISC",
   "dependencies": {
+    "@discordjs/rest": "^1.5.0",
     "discord.js": "^13.3.1"
   },
-  "devDependencies": [],
   "description": "Discord JS based Tic Tac Toe to be played against other players or bots!",
   "nodeVersion": "16.13.0"
 }
